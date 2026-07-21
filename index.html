@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Les Mémoires d'Arzacq — William</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ÉCRAN TITRE -->
+  <div id="title">
+    <div class="scanlines"></div>
+    <div class="title-inner">
+      <div class="kicker">RECONSTITUTION MÉMORIELLE · BÉARN</div>
+      <h1>LES MÉMOIRES<br><span>D'ARZACQ</span></h1>
+      <p class="lead">Incarne <strong>William</strong>. Explore la reconstitution 3D d'Arzacq-Arraziguet,
+        grimpe aux points de vue pour <em>synchroniser</em> tes souvenirs et récupère les fragments de mémoire.</p>
+      <button id="play">▶ ENTRER DANS LA MÉMOIRE</button>
+      <div class="help">
+        <span><b>ZQSD / WASD</b> se déplacer</span>
+        <span><b>Souris</b> caméra (clic pour capturer)</span>
+        <span><b>Maj</b> courir</span>
+        <span><b>Espace</b> sauter</span>
+        <span><b>E</b> synchroniser</span>
+      </div>
+      <p class="disclaimer">Jeu personnel non commercial, inspiré du genre aventure/infiltration. Aucune marque tierce.</p>
+    </div>
+  </div>
+
+  <!-- JEU -->
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="ui" class="hidden">
+    <div id="topbar">
+      <div class="stat"><span class="lbl">POINTS DE VUE</span><span id="hud-vp" class="val">0/0</span></div>
+      <div class="objective"><span class="o-dot"></span><span id="hud-obj">…</span></div>
+      <div class="stat"><span class="lbl">FRAGMENTS</span><span id="hud-fr" class="val">0/0</span></div>
+    </div>
+
+    <div id="markers"></div>
+
+    <div id="prompt"><span class="key">E</span> Synchroniser <span class="p-name"></span></div>
+    <div id="hint">Clique pour capturer la souris</div>
+    <div id="toast"></div>
+
+    <div id="cine">
+      <div class="cine-bar top"></div>
+      <div class="cine-bar bottom">
+        <div class="cine-tag">MÉMOIRE SYNCHRONISÉE</div>
+        <div id="cine-name"></div>
+        <div id="cine-fact"></div>
+      </div>
+    </div>
+
+    <div id="stick"><div class="stick-dot"></div></div>
+
+    <div id="win">
+      <div class="win-card">
+        <div class="win-emblem">◈</div>
+        <h2>SÉQUENCE COMPLÈTE</h2>
+        <p>Bravo <strong>William</strong> — tu as reconstitué toute la mémoire d'Arzacq-Arraziguet.</p>
+        <p id="win-score" class="win-score"></p>
+        <button id="win-btn">Rejouer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/lib/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/village.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/game.js"></script>
+  <script>
+    document.getElementById("play").addEventListener("click", () => {
+      document.getElementById("title").style.display = "none";
+      document.getElementById("ui").classList.remove("hidden");
+      window.START_GAME();
+    });
+  </script>
+</body>
+</html>

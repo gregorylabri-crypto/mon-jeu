@@ -1,0 +1,116 @@
+/* ============================================================
+   LES MÉMOIRES D'ARZACQ — UI moderne, sombre, "animus"
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; background: #05070c; color: #eaf2ff;
+  font-family: "Segoe UI", system-ui, sans-serif; -webkit-user-select: none; user-select: none; }
+.hidden { display: none !important; }
+
+#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+/* ---------------- ÉCRAN TITRE ---------------- */
+#title {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(90,140,220,0.18), transparent 60%),
+    linear-gradient(160deg, #0a1020 0%, #0b0d16 55%, #140c0a 100%);
+  overflow: hidden;
+}
+.scanlines { position: absolute; inset: 0; pointer-events: none; opacity: 0.35;
+  background: repeating-linear-gradient(0deg, rgba(120,180,255,0.05) 0 2px, transparent 2px 4px); }
+.title-inner { position: relative; text-align: center; max-width: 720px; padding: 30px; }
+.kicker { letter-spacing: 5px; font-size: 12px; color: #7fb2ff; margin-bottom: 16px; opacity: 0.85; }
+#title h1 {
+  font-size: clamp(38px, 8vw, 82px); line-height: 0.95; font-weight: 800; letter-spacing: 3px;
+  color: #f4f8ff; text-shadow: 0 0 30px rgba(120,170,255,0.35);
+}
+#title h1 span { color: #ffb454; text-shadow: 0 0 28px rgba(255,150,60,0.4); }
+.lead { margin: 22px auto 0; max-width: 540px; font-size: 16px; line-height: 1.65; color: #b9c6dc; }
+.lead strong { color: #ffb454; } .lead em { color: #7fb2ff; font-style: normal; }
+#play {
+  margin-top: 30px; font-size: 17px; font-weight: 700; letter-spacing: 2px;
+  padding: 16px 40px; border: 1px solid rgba(255,180,84,0.5); border-radius: 4px;
+  background: linear-gradient(#1a2436, #10151f); color: #ffcf8a; cursor: pointer;
+  box-shadow: 0 0 0 rgba(255,180,84,0); transition: all 0.2s;
+}
+#play:hover { box-shadow: 0 0 26px rgba(255,180,84,0.35); border-color: #ffb454; transform: translateY(-2px); }
+.help { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: center;
+  font-size: 13px; color: #8ea0bd; }
+.help b { color: #dfe8f7; }
+.disclaimer { margin-top: 26px; font-size: 11px; color: #55617a; }
+
+/* ---------------- HUD ---------------- */
+#ui { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+
+#topbar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px; padding: 16px 24px;
+  background: linear-gradient(180deg, rgba(6,10,18,0.65), transparent); }
+.stat { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
+.stat .lbl { font-size: 10px; letter-spacing: 2px; color: #8ea0bd; }
+.stat .val { font-size: 22px; font-weight: 800; color: #ffcf8a; }
+.objective { display: flex; align-items: center; gap: 10px; padding: 8px 18px;
+  background: rgba(10,16,26,0.6); border: 1px solid rgba(127,178,255,0.25); border-radius: 3px;
+  font-size: 14px; color: #dfe8f7; letter-spacing: 0.5px; }
+.o-dot { width: 8px; height: 8px; border-radius: 50%; background: #7fb2ff; box-shadow: 0 0 10px #7fb2ff;
+  animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Marqueurs d'objectifs */
+#markers { position: absolute; inset: 0; }
+.marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column;
+  align-items: center; gap: 2px; color: #ffcf8a; text-shadow: 0 0 8px rgba(0,0,0,0.8); }
+.marker .m-ico { font-size: 20px; filter: drop-shadow(0 0 6px rgba(255,180,84,0.8)); animation: pulse 1.6s infinite; }
+.marker .m-dist { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+
+/* Prompt "E synchroniser" */
+#prompt { position: absolute; left: 50%; bottom: 20%; transform: translateX(-50%);
+  padding: 12px 22px; background: rgba(8,12,20,0.8); border: 1px solid rgba(255,180,84,0.5);
+  border-radius: 4px; font-size: 15px; color: #ffe0ad; opacity: 0; transition: opacity 0.2s; }
+#prompt.show { opacity: 1; }
+#prompt .key { display: inline-block; margin-right: 8px; padding: 2px 10px; border: 1px solid #ffb454;
+  border-radius: 3px; font-weight: 800; color: #ffcf8a; }
+#prompt .p-name { color: #9fb4d6; margin-left: 6px; }
+
+#hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+  font-size: 12px; color: #6d7d99; letter-spacing: 1px; }
+
+#toast { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%) translateY(10px);
+  padding: 10px 20px; background: rgba(10,30,40,0.85); border-left: 3px solid #7fe0ff;
+  color: #cfefff; font-size: 14px; font-weight: 600; border-radius: 3px; opacity: 0; transition: all 0.25s; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Cinématique de synchronisation */
+#cine { position: absolute; inset: 0; opacity: 0; transition: opacity 0.5s; }
+#cine.show { opacity: 1; }
+.cine-bar { position: absolute; left: 0; right: 0; background: #05070c; }
+.cine-bar.top { top: 0; height: 12vh; box-shadow: 0 2px 20px rgba(0,0,0,0.6); }
+.cine-bar.bottom { bottom: 0; height: 22vh; padding: 22px 40px; }
+.cine-tag { font-size: 11px; letter-spacing: 4px; color: #7fb2ff; margin-bottom: 8px; }
+#cine-name { font-size: clamp(22px, 4vw, 38px); font-weight: 800; color: #ffcf8a;
+  text-shadow: 0 0 20px rgba(255,180,84,0.4); }
+#cine-fact { margin-top: 8px; max-width: 640px; font-size: 15px; line-height: 1.6; color: #b9c6dc; }
+
+/* Joystick tactile (mobile) */
+#stick { position: absolute; left: 22px; bottom: 22px; width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(20,30,45,0.35); border: 1px solid rgba(127,178,255,0.25); pointer-events: auto;
+  display: none; align-items: center; justify-content: center; }
+.stick-dot { width: 46px; height: 46px; border-radius: 50%; background: rgba(127,178,255,0.4); }
+@media (pointer: coarse) { #stick { display: flex; } }
+
+/* Écran de victoire */
+#win { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(4,8,14,0.85); opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+#win.show { opacity: 1; pointer-events: auto; }
+.win-card { text-align: center; padding: 40px 44px; max-width: 90vw;
+  background: linear-gradient(160deg, #10182a, #0a0d16); border: 1px solid rgba(255,180,84,0.4);
+  border-radius: 6px; box-shadow: 0 0 60px rgba(255,180,84,0.2); }
+.win-emblem { font-size: 46px; color: #ffb454; text-shadow: 0 0 30px rgba(255,180,84,0.6); }
+.win-card h2 { margin-top: 10px; letter-spacing: 4px; color: #f4f8ff; }
+.win-card p { margin-top: 14px; color: #b9c6dc; font-size: 15px; }
+.win-card strong { color: #ffb454; }
+.win-score { color: #7fe0ff !important; font-weight: 700; }
+#win-btn { margin-top: 22px; pointer-events: auto; padding: 12px 30px; font-weight: 700; letter-spacing: 1px;
+  background: linear-gradient(#1a2436, #10151f); color: #ffcf8a; border: 1px solid rgba(255,180,84,0.5);
+  border-radius: 4px; cursor: pointer; }
+#win-btn:hover { border-color: #ffb454; box-shadow: 0 0 20px rgba(255,180,84,0.3); }
