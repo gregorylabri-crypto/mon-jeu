@@ -26,6 +26,27 @@
     composer.addPass(new THREE.RenderPass(scene, camera));
     bloom = new THREE.UnrealBloomPass(new THREE.Vector2(1, 1), 0.5, 0.55, 0.9);
     composer.addPass(bloom);
+    // Étalonnage cinématique : vignette + chaleur + saturation
+    if (THREE.ShaderPass) {
+      const GradeShader = {
+        uniforms: { tDiffuse: { value: null }, offset: { value: 1.05 }, darkness: { value: 1.15 }, warm: { value: 0.05 }, sat: { value: 1.12 } },
+        vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+        fragmentShader: [
+          "uniform sampler2D tDiffuse; uniform float offset; uniform float darkness; uniform float warm; uniform float sat; varying vec2 vUv;",
+          "void main(){",
+          "  vec4 c = texture2D(tDiffuse, vUv);",
+          "  vec2 uv = (vUv - 0.5) * offset;",
+          "  float v = clamp(1.0 - dot(uv, uv) * darkness, 0.0, 1.0);",
+          "  vec3 col = c.rgb * mix(1.0, v, 0.85);",
+          "  col.r += warm; col.b -= warm * 0.6;",
+          "  float l = dot(col, vec3(0.299, 0.587, 0.114));",
+          "  col = mix(vec3(l), col, sat);",
+          "  gl_FragColor = vec4(col, c.a);",
+          "}"
+        ].join("\n"),
+      };
+      composer.addPass(new THREE.ShaderPass(GradeShader));
+    }
   }
 
   /* ---------- Ciel ---------- */
@@ -55,6 +76,7 @@
   const player = Player.build(scene);
   const npcs = NPC.buildAll(scene);
   const horse = NPC.horse;
+  if (window.FX) FX.build(scene, world);
   sun.target = player.group;
 
   player.group.position.set(world.spawn.x, 0, world.spawn.z);
@@ -80,7 +102,7 @@
   let syncedCount = 0, fragCount = 0, won = false;
   const TOTAL_VP = world.viewpoints.length, TOTAL_FR = world.fragments.length;
   let nearVP = null, nearNPC = null, nearHorse = false, nearClimb = null;
-  let landT = 0;
+  let landT = 0, stepAcc = 0;
 
   /* ---------- Entrées clavier + souris ---------- */
   const keys = {};
@@ -155,12 +177,14 @@
   function talk(npc) {
     dlgNpc = npc; dlgLine = 0; state = "dialogue";
     dlgName.textContent = npc.name; dlgText.textContent = npc.lines[0];
+    if (window.AUDIO) AUDIO.talk();
     dlg.classList.add("show");
   }
   function advanceDialogue() {
     dlgLine++;
     if (dlgLine >= dlgNpc.lines.length) { closeDialogue(); return; }
     dlgText.textContent = dlgNpc.lines[dlgLine];
+    if (window.AUDIO) AUDIO.talk();
   }
   function closeDialogue() { if (state !== "dialogue") return; dlg.classList.remove("show"); dlgNpc = null; state = mounted ? "play" : "play"; }
 
@@ -181,7 +205,7 @@
       player.group.position.set(hp.x - Math.sin(facing) * 2.2, 0, hp.z - Math.cos(facing) * 2.2);
       toast("Tu descends de Caramel");
     } else if (nearHorse) {
-      mounted = true; toast("En selle sur Caramel ! (MONTER pour descendre)");
+      mounted = true; if (window.AUDIO) AUDIO.mount(); toast("En selle sur Caramel ! (MONTER pour descendre)");
     }
   }
 
@@ -198,10 +222,11 @@
   /* ---------- Synchronisation (cinématique) ---------- */
   const cine = { active: false, t: 0, dur: 5.4, vp: null };
   function startSync(vp) { if (cine.active || vp.synced) return; cine.active = true; cine.t = 0; cine.vp = vp; state = "sync"; if (pointerLocked) document.exitPointerLock(); prompt.classList.remove("show"); }
-  function finishSync(vp) { vp.synced = true; vp.beam.material.color.setHex(0x8affc0); syncedCount++; updateHUD(); checkWin(); }
+  function finishSync(vp) { vp.synced = true; vp.beam.material.color.setHex(0x8affc0); syncedCount++; updateHUD(); if (window.AUDIO) AUDIO.sync(); checkWin(); }
   function checkWin() {
     if (syncedCount === TOTAL_VP && fragCount === TOTAL_FR && !won) {
       won = true;
+      if (window.AUDIO) AUDIO.win();
       document.getElementById("win").classList.add("show");
       document.getElementById("win-score").textContent = `${TOTAL_VP} points de vue · ${TOTAL_FR} fragments`;
     }
@@ -248,6 +273,7 @@
 
     // animations d'ambiance
     NPC.update(npcs, dt, t, player.group.position);
+    if (window.FX) FX.update(dt, t);
     world.fragments.forEach((f) => { if (f.collected) return; f.mesh.rotation.y += dt * 1.8; f.mesh.position.y = 1.7 + Math.sin(t * 2 + f.id) * 0.28; });
     world.viewpoints.forEach((vp) => { vp.beam.material.opacity = (vp.synced ? 0.1 : 0.18) + Math.sin(t * 2 + vp.pos.x) * 0.05; });
     world.water.forEach((w) => { w.mesh.material.opacity = 0.9 + Math.sin(t * 1.5) * 0.03; });
@@ -310,6 +336,13 @@
     const speed = mounted ? (running ? CONFIG.HORSE_RUN : CONFIG.HORSE_WALK) : (running ? CONFIG.RUN_SPEED : CONFIG.WALK_SPEED);
     const target = mounted ? horse.position : player.group.position;
 
+    // bruits de pas / sabots
+    if (moving && (mounted || player.onGround)) {
+      const interval = mounted ? (running ? 0.24 : 0.4) : (running ? 0.28 : 0.38);
+      stepAcc += dt;
+      if (stepAcc >= interval) { stepAcc = 0; if (window.AUDIO) (mounted ? AUDIO.hoof() : AUDIO.step(running)); }
+    } else stepAcc = 0.99;
+
     if (moving) {
       const len = Math.hypot(mx, mz); mx /= len; mz /= len;
       target.x += mx * speed * dt; target.z += mz * speed * dt;
@@ -327,10 +360,10 @@
     } else {
       player.group.rotation.y = facing;
       // gravité / saut
-      if (keys.Space && player.onGround) { player.vel.y = CONFIG.JUMP; player.onGround = false; }
+      if (keys.Space && player.onGround) { player.vel.y = CONFIG.JUMP; player.onGround = false; if (window.AUDIO) AUDIO.jump(); }
       player.vel.y += CONFIG.GRAVITY * dt;
       player.group.position.y += player.vel.y * dt;
-      if (player.group.position.y <= 0) { player.group.position.y = 0; player.vel.y = 0; player.onGround = true; }
+      if (player.group.position.y <= 0) { const wasAir = !player.onGround; player.group.position.y = 0; if (wasAir && player.vel.y < -3 && window.AUDIO) AUDIO.land(); player.vel.y = 0; player.onGround = true; }
       Player.animate(player, moving ? "move" : "idle", speed, dt);
     }
 
@@ -360,7 +393,7 @@
     if (!mounted) for (const c of world.climbs) { const d = Math.hypot(pp.x - c.x, pp.z - c.z); if (d < CONFIG.CLIMB_RANGE && d < best) { best = d; nearClimb = c; } }
 
     // fragments
-    for (const f of world.fragments) { if (f.collected) continue; if (Math.hypot(pp.x - f.mesh.position.x, pp.z - f.mesh.position.z) < CONFIG.FRAGMENT_RANGE) { f.collected = true; f.mesh.visible = false; fragCount++; toast(`Fragment de mémoire  ${fragCount}/${TOTAL_FR}`); updateHUD(); checkWin(); } }
+    for (const f of world.fragments) { if (f.collected) continue; if (Math.hypot(pp.x - f.mesh.position.x, pp.z - f.mesh.position.z) < CONFIG.FRAGMENT_RANGE) { f.collected = true; f.mesh.visible = false; fragCount++; if (window.AUDIO) AUDIO.collect(); toast(`Fragment de mémoire  ${fragCount}/${TOTAL_FR}`); updateHUD(); checkWin(); } }
 
     // invite + objectif
     let pm = null;

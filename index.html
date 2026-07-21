@@ -39,6 +39,7 @@
     </div>
 
     <div id="markers"></div>
+    <button id="mute" title="Son on/off">🔊</button>
     <div id="prompt"><span class="key">E</span> <span class="p-txt"></span></div>
     <div id="toast"></div>
 
@@ -92,7 +93,9 @@
   <script src="js/lib/pp/UnrealBloomPass.js"></script>
   <!-- Jeu -->
   <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/village.js"></script>
+  <script src="js/fx.js"></script>
   <script src="js/npc.js"></script>
   <script src="js/player.js"></script>
   <script src="js/cinematic.js"></script>
@@ -103,6 +106,7 @@
     document.getElementById("play").addEventListener("click", () => {
       document.getElementById("title").style.display = "none";
       document.getElementById("ui").classList.remove("hidden");
+      if (window.AUDIO) { AUDIO.init(); AUDIO.resume(); AUDIO.startMusic(); AUDIO.click(); }
       window.START_GAME();
       skipBtn.classList.remove("hidden");
       Cinematic.start(document.getElementById("cine-canvas"), {
@@ -110,7 +114,12 @@
         onDone: endIntro,
       });
     });
-    skipBtn.addEventListener("click", () => { Cinematic.skip(); endIntro(); });
+    skipBtn.addEventListener("click", () => { if (window.AUDIO) AUDIO.click(); Cinematic.skip(); endIntro(); });
+    // bouton muet
+    document.getElementById("mute").addEventListener("click", (e) => {
+      const m = window.AUDIO ? AUDIO.toggleMute() : true;
+      e.currentTarget.textContent = m ? "🔇" : "🔊";
+    });
     // taper sur la boîte de dialogue = continuer
     document.getElementById("dialogue").addEventListener("click", () => {
       if (window.__game) window.__game.interact();

@@ -41,6 +41,9 @@ html, body { height: 100%; overflow: hidden; background: #05070c; color: #eaf2ff
 .o-dot { width: 8px; height: 8px; border-radius: 50%; background: #7fb2ff; box-shadow: 0 0 10px #7fb2ff; animation: pulse 1.5s infinite; flex: none; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
+#mute { position: absolute; top: 56px; right: 18px; z-index: 22; pointer-events: auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(200,220,255,0.3); background: rgba(10,16,26,0.55); font-size: 18px; cursor: pointer; }
+#mute:hover { border-color: #ffb454; }
+
 #markers { position: absolute; inset: 0; }
 .marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; color: #ffcf8a; text-shadow: 0 0 8px rgba(0,0,0,0.8); }
 .marker .m-ico { font-size: 20px; filter: drop-shadow(0 0 6px rgba(255,180,84,0.8)); animation: pulse 1.6s infinite; }
