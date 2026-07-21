@@ -13,22 +13,22 @@
     <div class="title-inner">
       <div class="kicker">RECONSTITUTION MÉMORIELLE · BÉARN</div>
       <h1>LES MÉMOIRES<br><span>D'ARZACQ</span></h1>
-      <p class="lead">Incarne <strong>William</strong>. Explore la reconstitution 3D d'Arzacq-Arraziguet,
-        grimpe aux points de vue pour <em>synchroniser</em> tes souvenirs et récupère les fragments de mémoire.</p>
-      <button id="play">▶ ENTRER DANS LA MÉMOIRE</button>
+      <p class="lead">Incarne <strong>William</strong>. De l'espace jusqu'à son village,
+        explore la reconstitution 3D d'<em>Arzacq-Arraziguet</em> : parle aux habitants,
+        monte à cheval, grimpe aux tours et synchronise les points de vue.</p>
+      <button id="play">▶ COMMENCER</button>
       <div class="help">
-        <span><b>ZQSD / WASD</b> se déplacer</span>
-        <span><b>Souris</b> caméra (clic pour capturer)</span>
-        <span><b>Maj</b> courir</span>
-        <span><b>Espace</b> sauter</span>
-        <span><b>E</b> synchroniser</span>
+        <span><b>ZQSD</b> se déplacer</span><span><b>Souris</b> caméra</span>
+        <span><b>Maj</b> courir</span><span><b>Espace</b> sauter</span>
+        <span><b>E</b> parler / agir</span><span><b>F</b> cheval</span><span><b>C</b> grimper</span>
       </div>
-      <p class="disclaimer">Jeu personnel non commercial, inspiré du genre aventure/infiltration. Aucune marque tierce.</p>
+      <p class="disclaimer">Jeu personnel non commercial. Carte fidèle à la géographie réelle du village. Aucune marque tierce.</p>
     </div>
   </div>
 
-  <!-- JEU -->
   <canvas id="game"></canvas>
+  <canvas id="cine-canvas"></canvas>
+  <button id="skip" class="hidden">Passer l'intro ▸</button>
 
   <!-- HUD -->
   <div id="ui" class="hidden">
@@ -39,9 +39,7 @@
     </div>
 
     <div id="markers"></div>
-
-    <div id="prompt"><span class="key">E</span> Synchroniser <span class="p-name"></span></div>
-    <div id="hint">Clique pour capturer la souris</div>
+    <div id="prompt"><span class="key">E</span> <span class="p-txt"></span></div>
     <div id="toast"></div>
 
     <div id="cine">
@@ -53,7 +51,23 @@
       </div>
     </div>
 
+    <!-- Boîte de dialogue -->
+    <div id="dialogue">
+      <div id="dlg-name"></div>
+      <div id="dlg-text"></div>
+      <div class="dlg-hint">▸ E / toucher pour continuer</div>
+    </div>
+
+    <!-- Manette tactile -->
+    <div id="lookzone"></div>
     <div id="stick"><div class="stick-dot"></div></div>
+    <div id="pad">
+      <button id="btnClimb" class="pad-btn small">GRIMPER</button>
+      <button id="btnMount" class="pad-btn small">MONTER</button>
+      <button id="btnRun" class="pad-btn">COURIR</button>
+      <button id="btnJump" class="pad-btn">SAUT</button>
+      <button id="btnAction" class="pad-btn action">ACTION</button>
+    </div>
 
     <div id="win">
       <div class="win-card">
@@ -66,16 +80,40 @@
     </div>
   </div>
 
+  <!-- Three.js + post-traitement (bloom) -->
   <script src="js/lib/three.min.js"></script>
+  <script src="js/lib/shaders/CopyShader.js"></script>
+  <script src="js/lib/shaders/LuminosityHighPassShader.js"></script>
+  <script src="js/lib/pp/Pass.js"></script>
+  <script src="js/lib/pp/ShaderPass.js"></script>
+  <script src="js/lib/pp/MaskPass.js"></script>
+  <script src="js/lib/pp/RenderPass.js"></script>
+  <script src="js/lib/pp/EffectComposer.js"></script>
+  <script src="js/lib/pp/UnrealBloomPass.js"></script>
+  <!-- Jeu -->
   <script src="js/config.js"></script>
   <script src="js/village.js"></script>
+  <script src="js/npc.js"></script>
   <script src="js/player.js"></script>
+  <script src="js/cinematic.js"></script>
   <script src="js/game.js"></script>
   <script>
+    const skipBtn = document.getElementById("skip");
+    function endIntro() { skipBtn.classList.add("hidden"); }
     document.getElementById("play").addEventListener("click", () => {
       document.getElementById("title").style.display = "none";
       document.getElementById("ui").classList.remove("hidden");
       window.START_GAME();
+      skipBtn.classList.remove("hidden");
+      Cinematic.start(document.getElementById("cine-canvas"), {
+        onLand: () => window.GAME.startLanding(),
+        onDone: endIntro,
+      });
+    });
+    skipBtn.addEventListener("click", () => { Cinematic.skip(); endIntro(); });
+    // taper sur la boîte de dialogue = continuer
+    document.getElementById("dialogue").addEventListener("click", () => {
+      if (window.__game) window.__game.interact();
     });
   </script>
 </body>
